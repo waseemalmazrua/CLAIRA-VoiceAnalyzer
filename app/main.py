@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.core.logging import setup_observability
 from app.lifespans.lifespan_services import lifespan
 
-app = FastAPI(docs_url=None, openapi_url=None, lifespan=lifespan, title="Medical Analyzer API")
+app = FastAPI(docs_url=None, openapi_url=None , redoc_url=None, lifespan=lifespan, title="Medical Analyzer API")
 FastAPIRedis(app).lifespan().rate_limiting().otel()
 
 app.add_middleware(
