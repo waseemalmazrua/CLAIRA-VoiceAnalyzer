@@ -182,15 +182,30 @@ function VoiceAnalyzerPage() {
               Audio file
             </label>
 
-            <input
-              id="audio-file"
-              name="file"
-              type="file"
-              accept="audio/*,.wav,.mp3,.m4a,.webm"
-              onChange={handleFileChange}
-              disabled={isAnalyzing}
-              className="mt-4 block w-full rounded-2xl border border-[#155f96]/15 bg-white p-3 text-sm file:mr-4 file:rounded-full file:border-0 file:bg-[#e4f0f7] file:px-4 file:py-2 file:font-semibold file:text-[#155f96] disabled:cursor-not-allowed disabled:opacity-60"
-            />
+            <div className="mt-4 flex flex-wrap items-center gap-4">
+              <label
+                htmlFor="audio-file"
+                className="inline-flex cursor-pointer items-center rounded-full bg-[#e4f0f7] px-4 py-2 text-sm font-semibold text-[#155f96] transition hover:bg-[#d7e9f3] aria-disabled:cursor-not-allowed aria-disabled:opacity-60"
+                aria-disabled={isAnalyzing}
+              >
+                Choose file
+              </label>
+
+              <input
+                id="audio-file"
+                name="file"
+                type="file"
+                lang="en"
+                accept="audio/*,.wav,.mp3,.m4a,.webm"
+                onChange={handleFileChange}
+                disabled={isAnalyzing}
+                className="sr-only"
+              />
+
+              <span className="text-sm text-[#8a9aa5]">
+                {audioFile ? audioFile.name : "No file chosen"}
+              </span>
+            </div>
 
             {audioFile && (
               <div className="mt-4 rounded-2xl border border-[#155f96]/10 bg-white px-4 py-3">
@@ -220,7 +235,7 @@ function VoiceAnalyzerPage() {
             <button
               type="submit"
               disabled={!audioFile || isAnalyzing}
-              className="mt-6 inline-flex min-w-44 items-center justify-center rounded-full bg-[#155f96] px-7 py-3.5 font-semibold !text-white transition hover:bg-[#104f80] disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-8 inline-flex min-w-44 items-center justify-center rounded-full bg-[#155f96] px-7 py-3.5 font-semibold !text-white transition hover:bg-[#104f80] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isAnalyzing
                 ? "Analyzing audio..."
