@@ -77,7 +77,7 @@ function VoiceAnalyzerPage() {
       formData.append("file", audioFile);
 
       const response = await fetch(
-        `${API_URL}/medical/analyze-audio`,
+        `${API_URL}/analyze-audio`,
         {
           method: "POST",
           headers: {

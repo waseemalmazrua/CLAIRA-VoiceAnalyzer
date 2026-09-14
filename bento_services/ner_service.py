@@ -23,18 +23,21 @@ logfire.configure(
 
 
 image = (
-    bentoml.images.Image(base_image="python:3.11-slim")
+    bentoml.images.Image(base_image="python:3.11.15-slim")
     .python_packages(
         "--index-url https://pypi.org/simple",
-        "--extra-index-url https://download.pytorch.org/whl/cu124",
-        "torch",
-        "torchvision",
-        "torchaudio",
+        "--extra-index-url https://download.pytorch.org/whl/cu130",
+
+        "torch==2.13.0",
+
+        "--extra-index-url",
+        "https://pypi.org/simple",
+
         "gliner==0.2.24",
         "logfire==4.32.1",
-        "python-dotenv>=1.2.2",
-        "pydantic-settings>=2.14.0",
-        "fastapi>=0.136.1",
+        "python-dotenv==1.2.2",
+        "pydantic-settings==2.14.0",
+        "fastapi==0.136.1",
     )
     .run(
         'python -c "from gliner import GLiNER; '

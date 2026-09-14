@@ -8,6 +8,7 @@ dependencies = [
     "alembic>=1.18.5",
     "asyncpg>=0.31.0",
     "bentoml>=1.4.38",
+    "fastapi-cloud-cli>=0.26.0",
     "fastapi-redis-sdk[otel]==0.8.0",
     "fastapi[standard]>=0.136.1",
     "faster-whisper>=1.2.1",

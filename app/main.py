@@ -1,13 +1,25 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from redis_fastapi import FastAPIRedis
 
 from app.api.medical import router as medical_router
+from app.core.config import settings
 from app.core.logging import setup_observability
 from app.lifespans.lifespan_services import lifespan
 
 app = FastAPI(lifespan=lifespan, title="Medical Analyzer API")
 FastAPIRedis(app).lifespan().rate_limiting().otel()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173",
+
+
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # Setup Logfire tracing
 setup_observability(app)
 

@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     groq_api_key: SecretStr
     runpod_api_key: SecretStr
 
+
  
 
     model_config = SettingsConfigDict(
