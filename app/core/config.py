@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     groq_api_key: SecretStr
     runpod_api_key: SecretStr
 
+    allow_origins: list[str]
+
 
  
 
