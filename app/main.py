@@ -12,7 +12,7 @@ FastAPIRedis(app).lifespan().rate_limiting().otel()
 #"http://localhost:5173"
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.allow_origins],
+    allow_origins=[str(settings.allow_origins)],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
