@@ -1,6 +1,6 @@
 from functools import cache
 
-from pydantic import Field, HttpUrl, PostgresDsn, RedisDsn, SecretStr
+from pydantic import Field, PostgresDsn, RedisDsn, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     groq_api_key: SecretStr
     runpod_api_key: SecretStr
 
-    allow_origins: HttpUrl
+    allow_origins: str
 
 
  

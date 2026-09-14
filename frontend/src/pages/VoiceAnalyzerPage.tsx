@@ -4,11 +4,31 @@ import { Link, useNavigate } from "react-router";
 
 import { supabase } from "../lib/supabase";
 
+type Recommendation = {
+  title: string;
+  rationale: string;
+  urgency: "high" | "medium" | "low";
+};
+
+type SoapNote = {
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
+};
+
+type ClinicalReport = {
+  chief_complaint: string;
+  clinical_summary: string;
+  key_findings: string[];
+  possible_risks: string[];
+  soap_note: SoapNote;
+  recommendations: Recommendation[];
+  disclaimer: string;
+};
+
 type AnalysisResult = {
-  transcript?: string;
-  entities?: unknown;
-  clinical_report?: unknown;
-  [key: string]: unknown;
+  report: ClinicalReport;
 };
 
 type ApiErrorResponse = {
@@ -16,8 +36,9 @@ type ApiErrorResponse = {
   message?: string;
 };
 
-const API_URL =
-  import.meta.env.VITE_API_URL ?? "http://localhost:9090";
+const API_URL = (
+  import.meta.env.VITE_API_URL ?? "http://localhost:9090"
+).replace(/\/+$/, "");
 
 function VoiceAnalyzerPage() {
   const navigate = useNavigate();
@@ -27,9 +48,7 @@ function VoiceAnalyzerPage() {
   const [error, setError] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  function handleFileChange(
-    event: ChangeEvent<HTMLInputElement>,
-  ) {
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
 
     setAudioFile(file);
@@ -37,9 +56,7 @@ function VoiceAnalyzerPage() {
     setError("");
   }
 
-  async function handleSubmit(
-    event: FormEvent<HTMLFormElement>,
-  ) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!audioFile) {
@@ -62,8 +79,7 @@ function VoiceAnalyzerPage() {
           replace: true,
           state: {
             redirectTo: "/voice",
-            message:
-              "Please sign in to start using CLAIRA Voice.",
+            message: "Please sign in to start using CLAIRA Voice.",
           },
         });
 
@@ -72,20 +88,17 @@ function VoiceAnalyzerPage() {
 
       const formData = new FormData();
 
-      // Must match:
+      // Must match the FastAPI endpoint:
       // file: UploadFile = File(...)
       formData.append("file", audioFile);
 
-      const response = await fetch(
-        `${API_URL}/analyze-audio`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: formData,
+      const response = await fetch(`${API_URL}/analyze-audio`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
-      );
+        body: formData,
+      });
 
       if (response.status === 401) {
         await supabase.auth.signOut();
@@ -94,8 +107,7 @@ function VoiceAnalyzerPage() {
           replace: true,
           state: {
             redirectTo: "/voice",
-            message:
-              "Your session has expired. Please sign in again.",
+            message: "Your session has expired. Please sign in again.",
           },
         });
 
@@ -196,7 +208,7 @@ function VoiceAnalyzerPage() {
                 name="file"
                 type="file"
                 lang="en"
-                accept="audio/*,.wav,.mp3,.m4a,.webm"
+                accept="audio/*,.wav,.mp3,.m4a,.webm,.flac"
                 onChange={handleFileChange}
                 disabled={isAnalyzing}
                 className="sr-only"
@@ -245,14 +257,177 @@ function VoiceAnalyzerPage() {
         </section>
 
         {result && (
-          <section className="mt-8 rounded-[2rem] border border-[#155f96]/10 bg-white p-6 shadow-[0_18px_45px_rgba(23,54,79,0.08)] sm:p-8">
-            <h2 className="text-xl font-semibold">
-              Analysis result
-            </h2>
+          <section className="mt-8 space-y-6 rounded-[2rem] border border-[#155f96]/10 bg-white p-6 shadow-[0_18px_45px_rgba(23,54,79,0.08)] sm:p-8">
+            <div>
+              <p className="text-sm font-semibold text-[#155f96]">
+                CLAIRA Clinical Report
+              </p>
 
-            <pre className="mt-5 max-h-[600px] overflow-auto whitespace-pre-wrap rounded-2xl bg-[#17364f] p-5 text-sm leading-6 !text-white">
-              {JSON.stringify(result, null, 2)}
-            </pre>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em]">
+                Analysis result
+              </h2>
+            </div>
+
+            <div className="rounded-2xl border border-[#155f96]/10 bg-[#f9f6f0] p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6c8291]">
+                Chief complaint
+              </p>
+
+              <p className="mt-2 leading-7 text-[#345367]">
+                {result.report.chief_complaint}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-[#155f96]/10 p-5">
+              <h3 className="text-lg font-semibold text-[#17364f]">
+                Clinical summary
+              </h3>
+
+              <p className="mt-3 leading-7 text-[#667d8d]">
+                {result.report.clinical_summary}
+              </p>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="rounded-2xl border border-[#155f96]/10 p-5">
+                <h3 className="font-semibold text-[#17364f]">
+                  Key findings
+                </h3>
+
+                <ul className="mt-4 space-y-3">
+                  {result.report.key_findings.map(
+                    (finding, index) => (
+                      <li
+                        key={`${finding}-${index}`}
+                        className="flex gap-3 text-sm leading-6 text-[#667d8d]"
+                      >
+                        <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#155f96]" />
+
+                        <span>{finding}</span>
+                      </li>
+                    ),
+                  )}
+                </ul>
+              </div>
+
+              <div className="rounded-2xl border border-red-100 bg-red-50/40 p-5">
+                <h3 className="font-semibold text-[#17364f]">
+                  Possible risks
+                </h3>
+
+                <ul className="mt-4 space-y-3">
+                  {result.report.possible_risks.map(
+                    (risk, index) => (
+                      <li
+                        key={`${risk}-${index}`}
+                        className="flex gap-3 text-sm leading-6 text-[#667d8d]"
+                      >
+                        <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-red-400" />
+
+                        <span>{risk}</span>
+                      </li>
+                    ),
+                  )}
+                </ul>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#155f96]/10 p-5">
+              <h3 className="text-lg font-semibold text-[#17364f]">
+                SOAP note
+              </h3>
+
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl bg-[#f9f6f0] p-4">
+                  <p className="text-sm font-semibold text-[#155f96]">
+                    Subjective
+                  </p>
+
+                  <p className="mt-2 text-sm leading-6 text-[#667d8d]">
+                    {result.report.soap_note.subjective}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-[#f9f6f0] p-4">
+                  <p className="text-sm font-semibold text-[#155f96]">
+                    Objective
+                  </p>
+
+                  <p className="mt-2 text-sm leading-6 text-[#667d8d]">
+                    {result.report.soap_note.objective}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-[#f9f6f0] p-4">
+                  <p className="text-sm font-semibold text-[#155f96]">
+                    Assessment
+                  </p>
+
+                  <p className="mt-2 text-sm leading-6 text-[#667d8d]">
+                    {result.report.soap_note.assessment}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-[#f9f6f0] p-4">
+                  <p className="text-sm font-semibold text-[#155f96]">
+                    Plan
+                  </p>
+
+                  <p className="mt-2 text-sm leading-6 text-[#667d8d]">
+                    {result.report.soap_note.plan}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-[#17364f]">
+                Recommendations
+              </h3>
+
+              <div className="mt-4 space-y-4">
+                {result.report.recommendations.map(
+                  (recommendation, index) => (
+                    <div
+                      key={`${recommendation.title}-${index}`}
+                      className="rounded-2xl border border-[#155f96]/10 p-5"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <h4 className="font-semibold text-[#17364f]">
+                          {recommendation.title}
+                        </h4>
+
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${
+                            recommendation.urgency === "high"
+                              ? "bg-red-100 text-red-700"
+                              : recommendation.urgency === "medium"
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-emerald-100 text-emerald-700"
+                          }`}
+                        >
+                          {recommendation.urgency}
+                        </span>
+                      </div>
+
+                      <p className="mt-3 text-sm leading-6 text-[#667d8d]">
+                        {recommendation.rationale}
+                      </p>
+                    </div>
+                  ),
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-sm leading-6 text-amber-900">
+                <span className="font-semibold">
+                  Clinical disclaimer:{" "}
+                </span>
+
+                {result.report.disclaimer}
+              </p>
+            </div>
           </section>
         )}
       </div>
