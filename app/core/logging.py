@@ -21,5 +21,3 @@ def setup_observability(app: FastAPI) -> None:
 
     # redis
     logfire.instrument_redis()
-
-

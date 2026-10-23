@@ -31,11 +31,8 @@ class AudioAnalysisCache:
 
         cached_value = await self._redis.get(key)
 
-
         if cached_value is None:
             return None
-
-            
 
         try:
             raw_data: Any = json.loads(cached_value)

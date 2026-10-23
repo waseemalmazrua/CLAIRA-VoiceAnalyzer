@@ -27,12 +27,9 @@ image = (
     .python_packages(
         "--index-url https://pypi.org/simple",
         "--extra-index-url https://download.pytorch.org/whl/cu130",
-
         "torch==2.13.0",
-
         "--extra-index-url",
         "https://pypi.org/simple",
-
         "gliner==0.2.24",
         "logfire==4.32.1",
         "python-dotenv==1.2.2",
@@ -46,9 +43,11 @@ image = (
 )
 health_app = FastAPI()
 
+
 @health_app.get("/ping")
 async def health():
     return {"status": "ok"}
+
 
 # Starting the BentoML Service
 @bentoml.service(
@@ -94,12 +93,10 @@ class NERService:
     @bentoml.api
     def extract_entities(self, request: NerRequest) -> NEROutput:
 
-
         logfire.info(
             "GliNER Input Received",
             text_length=len(request.text),
         )
-
 
         with logfire.span(
             "Gliner predict",

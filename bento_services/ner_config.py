@@ -17,8 +17,10 @@ class NERSettings(BaseSettings):
         env_file_encoding="utf-8",
     )
 
+
 @cache
 def get_ner_settings():
     return NERSettings()
+
 
 ner_settings = get_ner_settings()

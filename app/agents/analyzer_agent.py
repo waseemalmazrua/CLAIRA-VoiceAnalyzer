@@ -1,4 +1,3 @@
-
 import logfire
 from openai import AsyncOpenAI
 from pydantic_ai import Agent, ModelSettings
@@ -25,12 +24,7 @@ clinical_agent = Agent(
     output_type=ClinicalReport,
     output_retries=2,
     retries=2,
-    model_settings=ModelSettings(
-        max_tokens=2000,
-        timeout=300,
-        thinking="minimal"
-        
-    ),
+    model_settings=ModelSettings(max_tokens=2000, timeout=300, thinking="minimal"),
     instructions="""
 You are a clinical documentation assistant.
 

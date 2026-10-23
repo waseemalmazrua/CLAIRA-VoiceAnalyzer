@@ -50,6 +50,7 @@ def include_object(
         and object_.info.get("skip_autogenerate", False)
     )
 
+
 def configure_context(
     *,
     connection: Connection | None = None,

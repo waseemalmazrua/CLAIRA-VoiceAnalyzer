@@ -31,9 +31,35 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ipykernel>=7.3.0",
+    "pytest>=9.1.1",
+    "pytest-env>=1.7.1",
     "ruff>=0.16.0",
     "ty>=0.0.64",
 ]
 
 [tool.fastapi]
 entrypoint = "app.main:app"
+
+
+[tool.ty.src]
+exclude = ["migrations"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+env = [
+    # App settings (app/core/config.py)
+    "DATABASE_URL=postgresql+asyncpg://test:test@localhost:5432/test",
+    "REDIS_URL=redis://localhost:6380/0",
+    "OPENAI_API_KEY=test-openai-key",
+    "GROQ_API_KEY=test-groq-key",
+    "RUNPOD_API_KEY=test-runpod-key",
+    "ALLOW_ORIGINS=https://app.claira.dev",
+    "LOGFIRE_SEND_TO_LOGFIRE=false",
+    # redis_fastapi settings
+    "REDIS_PREFIX=claira-test",
+    "REDIS_RATE_LIMIT_DEFAULT_LIMIT=0",
+    "REDIS_RATE_LIMIT_EMIT_HEADERS=true",
+    "REDIS_RATE_LIMIT_FAIL_CLOSED=false",
+    "REDIS_OTEL_ENABLED=false",
+]

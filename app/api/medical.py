@@ -48,12 +48,10 @@ async def analyze_audio(
         if not audio_bytes:
             raise HTTPException(status_code=400, detail="Invalid audio file")
 
-
         cached_response = await services.audio_cache.get(audio_bytes)
 
         if cached_response is not None:
             return cached_response
-
 
         # 1) Whisper ASR
         whisper_result = await services.whisper.transcribe(
@@ -79,15 +77,13 @@ async def analyze_audio(
         response = AudioAnalyzerResponse(
             report=report,
         )
-    
+
         await services.audio_cache.set(
             audio_bytes=audio_bytes,
             response=response,
         )
 
         return response
-
-    
 
     except HTTPException:
         raise

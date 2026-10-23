@@ -31,8 +31,9 @@ class NERClient:
             try:
                 response = await self.client.post(
                     f"{self.base_url}/extract_entities",
-                    json={"request": {"text": request.text},
-                          },
+                    json={
+                        "request": {"text": request.text},
+                    },
                     headers={
                         "Authorization": f"Bearer {runpod}",
                     },
