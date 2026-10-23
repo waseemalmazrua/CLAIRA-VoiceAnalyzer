@@ -1,23 +1,30 @@
 <!doctype html>
-
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
 
-    <link
-      rel="icon"
-      type="image/png"
-      href="/CLAIRA.png"
-    />
+    <!-- Redirect any non-canonical host (web.app / firebaseapp.com) before the app loads -->
+    <script>
+      (function () {
+        var CANONICAL = "app.claira.dev";
+        var h = location.hostname;
+        var isLocal = h === "localhost" || h === "127.0.0.1";
+        if (h !== CANONICAL && !isLocal) {
+          location.replace("https://" + CANONICAL + location.pathname + location.search + location.hash);
+        }
+      })();
+    </script>
 
+    <link rel="canonical" href="https://app.claira.dev/" />
+    <link rel="icon" type="image/png" href="/CLAIRA.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="CLAIRA Voice: AI clinical documentation assistant." />
 
     <title>CLAIRA Voice</title>
   </head>
 
   <body>
     <div id="root"></div>
-
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
