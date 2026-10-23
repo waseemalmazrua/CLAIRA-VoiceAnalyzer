@@ -6,6 +6,7 @@ import pytest
 import redis as sync_redis
 from fastapi.testclient import TestClient
 
+from app.core.auth import CurrentUser, get_current_user
 from app.core.config import settings
 from app.main import app
 from app.schemas.agent_output import ClinicalReport, Recommendation, SOAPNote
@@ -28,6 +29,16 @@ def ensure_test_environment():
 # ── Shared client for all integration tests ────────────────────────
 @pytest.fixture
 def client():
+    """Authenticated client: real auth replaced by a fake user."""
+    app.dependency_overrides[get_current_user] = lambda: FAKE_USER
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def anon_client():
+    """No override: real auth runs, used to test 401s."""
     with TestClient(app) as c:
         yield c
 
@@ -87,3 +98,6 @@ def mock_services(client, monkeypatch, fake_report):
         transcript=transcript,
         entities=entities,
     )
+
+
+FAKE_USER = CurrentUser(id="test-user-id", email="test@claira.dev")

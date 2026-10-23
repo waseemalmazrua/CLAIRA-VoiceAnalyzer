@@ -18,6 +18,7 @@ dependencies = [
     "pydantic>=2.13.3",
     "pydantic-ai>=1.75.0",
     "pydantic-settings>=2.14.0",
+    "pyjwt[crypto]>=2.12.1",
     "python-dotenv>=1.2.2",
     "python-multipart>=0.0.27",
     "redis>=8.1.0",
@@ -56,6 +57,7 @@ env = [
     "RUNPOD_API_KEY=test-runpod-key",
     "ALLOW_ORIGINS=https://app.claira.dev",
     "LOGFIRE_SEND_TO_LOGFIRE=false",
+    "SUPABASE_URL=https://test-project.supabase.co",
     # redis_fastapi settings
     "REDIS_PREFIX=claira-test",
     "REDIS_RATE_LIMIT_DEFAULT_LIMIT=0",

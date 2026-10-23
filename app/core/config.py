@@ -1,6 +1,6 @@
 from functools import cache
 
-from pydantic import Field, PostgresDsn, RedisDsn, SecretStr
+from pydantic import AnyHttpUrl, Field, PostgresDsn, RedisDsn, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     runpod_api_key: SecretStr
 
     allow_origins: str
+
+    supabase_url: AnyHttpUrl
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from redis_fastapi import rate_limit
 
 from app.agents.analyzer_agent import generate_clinical_report
+from app.core.auth import CurrentUser, get_current_user
 from app.schemas.audio_analyzer_response import AudioAnalyzerResponse
 from bento_services.ner_schema import NerRequest
 
@@ -36,6 +37,7 @@ router = APIRouter(tags=["Medical Analysis"])
 async def analyze_audio(
     request: Request,
     file: Annotated[UploadFile, File()],
+    user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> AudioAnalyzerResponse:
     if not file.content_type or not file.content_type.startswith("audio/"):
         raise HTTPException(status_code=400, detail="Invalid audio file")
