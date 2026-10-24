@@ -16,6 +16,9 @@ class Settings(BaseSettings):
 
     supabase_url: AnyHttpUrl
 
+    max_audio_seconds: float = 20
+    max_upload_mb: float = 10
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

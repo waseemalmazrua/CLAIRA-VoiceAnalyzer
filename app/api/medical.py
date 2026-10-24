@@ -1,21 +1,21 @@
-# app/api/routes.py
-
 from typing import Annotated
 
 import httpx
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from redis_fastapi import rate_limit
+from starlette.concurrency import run_in_threadpool
 
 from app.agents.analyzer_agent import generate_clinical_report
 from app.core.auth import CurrentUser, get_current_user
+from app.core.config import settings
 from app.core.rate_limit import user_identifier
 from app.schemas.audio_analyzer_response import AudioAnalyzerResponse
+from app.utils.audio import AudioValidationError, get_audio_duration
 from bento_services.ner_schema import NerRequest
 
 router = APIRouter(tags=["Medical Analysis"])
 
-# whisper_client = WhisperClient()
-# ner_client = NERClient()
+INVALID_AUDIO = "Invalid audio file"
 
 
 @router.post(
@@ -49,18 +49,43 @@ async def analyze_audio(
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> AudioAnalyzerResponse:
     if not file.content_type or not file.content_type.startswith("audio/"):
-        raise HTTPException(status_code=400, detail="Invalid audio file")
+        raise HTTPException(status_code=400, detail=INVALID_AUDIO)
 
     try:
         services = request.app.state.services
-        # اقرأ ملف الصوت
-        audio_bytes = await file.read()
+
+        # Size limit: read at most max + 1 bytes, never the whole upload
+        max_bytes = int(settings.max_upload_mb * 1024 * 1024)
+        audio_bytes = await file.read(max_bytes + 1)
 
         if not audio_bytes:
-            raise HTTPException(status_code=400, detail="Invalid audio file")
+            raise HTTPException(status_code=400, detail=INVALID_AUDIO)
 
-        cached_response = await services.audio_cache.get(audio_bytes)
+        if len(audio_bytes) > max_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Audio file is larger than {settings.max_upload_mb:g} MB.",
+            )
 
+        # Duration limit: read from the file header, off the event loop
+        try:
+            duration = await run_in_threadpool(get_audio_duration, audio_bytes)
+        except AudioValidationError as exc:
+            raise HTTPException(status_code=400, detail=INVALID_AUDIO) from exc
+
+        if duration > settings.max_audio_seconds:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Audio is {duration:.1f} s long; "
+                    f"the limit is {settings.max_audio_seconds:g} s."
+                ),
+            )
+
+        cached_response = await services.audio_cache.get(
+            user_id=user.id,
+            audio_bytes=audio_bytes,
+        )
         if cached_response is not None:
             return cached_response
 
@@ -70,26 +95,23 @@ async def analyze_audio(
             audio_bytes=audio_bytes,
             content_type=file.content_type,
         )
-
         transcript = whisper_result["transcript"]
 
         # 2) Medical NER
         ner_result = await services.ner.extract_entities(NerRequest(text=transcript))
-
         entities = ner_result.entities
 
-        # 3) AI Agent
+        # 3) AI agent
         report = await generate_clinical_report(
             transcript=transcript,
             entities=entities,
         )
 
-        # 4) Final Response
-        response = AudioAnalyzerResponse(
-            report=report,
-        )
+        # 4) Final response
+        response = AudioAnalyzerResponse(report=report)
 
         await services.audio_cache.set(
+            user_id=user.id,
             audio_bytes=audio_bytes,
             response=response,
         )

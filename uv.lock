@@ -2468,6 +2468,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
+    { name = "av" },
     { name = "bentoml" },
     { name = "fastapi", extra = ["standard"] },
     { name = "fastapi-cloud-cli" },
@@ -2503,6 +2504,7 @@ dev = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.18.5" },
     { name = "asyncpg", specifier = ">=0.31.0" },
+    { name = "av", specifier = ">=17.0.1" },
     { name = "bentoml", specifier = ">=1.4.38" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.136.1" },
     { name = "fastapi-cloud-cli", specifier = ">=0.26.0" },

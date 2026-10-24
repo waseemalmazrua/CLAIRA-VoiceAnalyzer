@@ -6,9 +6,10 @@ from fastapi import Request
 
 from app.core.auth import CurrentUser, get_current_user
 from app.main import app
+from tests.helpers import make_wav
 
 ENDPOINT = "/analyze-audio"
-AUDIO = {"file": ("visit.wav", b"fake-audio-bytes", "audio/wav")}
+AUDIO = {"file": ("visit.wav", make_wav(2), "audio/wav")}
 IP_BURST_SAFE_DELAY = 0.6  # seconds; keeps us under the per-IP limit of 2/second
 
 
