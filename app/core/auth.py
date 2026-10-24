@@ -49,7 +49,7 @@ def get_current_user(
         payload = jwt.decode(
             token,
             signing_key.key,
-            algorithms=["ES256", "RS256"],
+            algorithms=["ES256"],
             audience="authenticated",
             issuer=_issuer(),
             options={"require": ["exp", "iat", "sub", "aud", "iss"]},
