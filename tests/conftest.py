@@ -1,4 +1,7 @@
 import os
+import shutil
+import subprocess
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -12,12 +15,28 @@ from app.main import app
 from app.schemas.agent_output import ClinicalReport, Recommendation, SOAPNote
 from bento_services.ner_schema import Entity, NEROutput
 
+# ── Constants ──────────────────────────────────────────────────────
 TEST_REDIS_HOST = "localhost:6380"
+FAKE_USER = CurrentUser(id="test-user-id", email="test@claira.dev")
+COMPOSE_FILE = Path(__file__).resolve().parent.parent / "compose.test.yml"
 
 
-# ── Safety: never run against non-test infrastructure ──────────────
+def _redis_is_up() -> bool:
+    client = sync_redis.Redis.from_url(
+        os.environ["REDIS_URL"], socket_connect_timeout=1
+    )
+    try:
+        return bool(client.ping())
+    except sync_redis.exceptions.ConnectionError:
+        return False
+    finally:
+        client.close()
+
+
+# ── Safety + auto-start test Redis (once per pytest run) ───────────
 @pytest.fixture(scope="session", autouse=True)
 def ensure_test_environment():
+    # 1. Never run against non-test infrastructure
     if TEST_REDIS_HOST not in str(settings.redis_url):
         pytest.exit(
             f"Refusing to run: REDIS_URL is not the test Redis ({TEST_REDIS_HOST}). "
@@ -25,8 +44,28 @@ def ensure_test_environment():
             returncode=1,
         )
 
+    # 2. Already running: nothing to do
+    if _redis_is_up():
+        return
 
-# ── Shared client for all integration tests ────────────────────────
+    # 3. In CI, Redis comes from the workflow service; never start Docker there
+    if os.environ.get("CI"):
+        pytest.exit("Test Redis is not reachable in CI.", returncode=1)
+
+    # 4. Locally: start only the isolated test project
+    if shutil.which("docker") is None:
+        pytest.exit("Docker not found. Start Redis on localhost:6380.", returncode=1)
+
+    subprocess.run(
+        ["docker", "compose", "-f", str(COMPOSE_FILE), "up", "-d", "--wait"],
+        check=True,
+    )
+
+    if not _redis_is_up():
+        pytest.exit("Test Redis did not become ready on localhost:6380.", returncode=1)
+
+
+# ── Shared clients ─────────────────────────────────────────────────
 @pytest.fixture
 def client():
     """Authenticated client: real auth replaced by a fake user."""
@@ -98,6 +137,3 @@ def mock_services(client, monkeypatch, fake_report):
         transcript=transcript,
         entities=entities,
     )
-
-
-FAKE_USER = CurrentUser(id="test-user-id", email="test@claira.dev")
