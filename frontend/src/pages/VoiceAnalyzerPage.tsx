@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { supabase } from "../lib/supabase";
+import { getAudioDuration } from "../utils/audio";
 
 type Recommendation = {
   title: string;
@@ -36,9 +37,22 @@ type ApiErrorResponse = {
   message?: string;
 };
 
+// Mirrors the backend GET /limits response
+type UploadLimits = {
+  max_audio_seconds: number;
+  max_upload_mb: number;
+};
+
 const API_URL = (
   import.meta.env.VITE_API_URL ?? "http://localhost:9090"
 ).replace(/\/+$/, "");
+
+// Used until /limits responds, or if it cannot be reached.
+// The backend always enforces the real values.
+const DEFAULT_LIMITS: UploadLimits = {
+  max_audio_seconds: 20,
+  max_upload_mb: 10,
+};
 
 function VoiceAnalyzerPage() {
   const navigate = useNavigate();
@@ -47,13 +61,57 @@ function VoiceAnalyzerPage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [limits, setLimits] = useState<UploadLimits>(DEFAULT_LIMITS);
 
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0] ?? null;
+  // Load the upload limits once, from the single source of truth (the backend)
+  useEffect(() => {
+    const controller = new AbortController();
 
-    setAudioFile(file);
+    fetch(`${API_URL}/limits`, { signal: controller.signal })
+      .then((response) =>
+        response.ok ? (response.json() as Promise<UploadLimits>) : null,
+      )
+      .then((data) => {
+        if (data) setLimits(data);
+      })
+      .catch(() => {
+        // Keep DEFAULT_LIMITS; the backend still validates every upload
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.target;
+    const file = input.files?.[0] ?? null;
+
+    setAudioFile(null);
     setResult(null);
     setError("");
+
+    if (!file) return;
+
+    // 1) Size: instant
+    if (file.size > limits.max_upload_mb * 1024 * 1024) {
+      setError(
+        `File is ${(file.size / 1024 / 1024).toFixed(1)} MB; the limit is ${limits.max_upload_mb} MB.`,
+      );
+      input.value = "";
+      return;
+    }
+
+    // 2) Duration: read in the browser, nothing is uploaded.
+    // null means the browser could not tell; the server still enforces the limit.
+    const duration = await getAudioDuration(file);
+    if (duration !== null && duration > limits.max_audio_seconds) {
+      setError(
+        `Audio is ${duration.toFixed(1)} s long; the limit is ${limits.max_audio_seconds} s.`,
+      );
+      input.value = "";
+      return;
+    }
+
+    setAudioFile(file);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -218,6 +276,11 @@ function VoiceAnalyzerPage() {
                 {audioFile ? audioFile.name : "No file chosen"}
               </span>
             </div>
+
+            <p className="mt-3 text-xs text-[#8a9aa5]">
+              Up to {limits.max_audio_seconds} seconds and{" "}
+              {limits.max_upload_mb} MB.
+            </p>
 
             {audioFile && (
               <div className="mt-4 rounded-2xl border border-[#155f96]/10 bg-white px-4 py-3">
