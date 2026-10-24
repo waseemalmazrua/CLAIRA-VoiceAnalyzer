@@ -1,7 +1,15 @@
 from typing import Annotated
 
 import httpx
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+)
 from redis_fastapi import rate_limit
 from starlette.concurrency import run_in_threadpool
 
@@ -10,10 +18,22 @@ from app.core.auth import CurrentUser, get_current_user
 from app.core.config import settings
 from app.core.rate_limit import user_identifier
 from app.schemas.audio_analyzer_response import AudioAnalyzerResponse
+from app.schemas.upload_limits import UploadLimits
 from app.utils.audio import AudioValidationError, get_audio_duration
 from bento_services.ner_schema import NerRequest
 
 router = APIRouter(tags=["Medical Analysis"])
+
+
+@router.get("/limits")
+def get_upload_limits(response: Response) -> UploadLimits:
+    """Public upload limits, so the frontend can validate files before uploading."""
+    response.headers["Cache-Control"] = "public, max-age=300"
+    return UploadLimits(
+        max_audio_seconds=settings.max_audio_seconds,
+        max_upload_mb=settings.max_upload_mb,
+    )
+
 
 INVALID_AUDIO = "Invalid audio file"
 
