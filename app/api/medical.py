@@ -8,6 +8,7 @@ from redis_fastapi import rate_limit
 
 from app.agents.analyzer_agent import generate_clinical_report
 from app.core.auth import CurrentUser, get_current_user
+from app.core.rate_limit import user_identifier
 from app.schemas.audio_analyzer_response import AudioAnalyzerResponse
 from bento_services.ner_schema import NerRequest
 
@@ -20,16 +21,24 @@ router = APIRouter(tags=["Medical Analysis"])
 @router.post(
     "/analyze-audio",
     dependencies=[
+        # 1) Per IP: stops anonymous spam before auth runs
+        Depends(rate_limit("2/second", scope="analyze-audio:burst")),
+        Depends(rate_limit("10/minute", scope="analyze-audio:sustained")),
+        # 2) Auth: verifies the JWT and stores the user on request.state
+        Depends(get_current_user),
+        # 3) Per user: protects the OpenAI / RunPod budget
         Depends(
             rate_limit(
-                "2/second",
-                scope="analyze-audio:burst",
+                "5/minute",
+                scope="analyze-audio:user-minute",
+                identifier=user_identifier,
             )
         ),
         Depends(
             rate_limit(
-                "10/minute",
-                scope="analyze-audio:sustained",
+                "50/day",
+                scope="analyze-audio:user-day",
+                identifier=user_identifier,
             )
         ),
     ],

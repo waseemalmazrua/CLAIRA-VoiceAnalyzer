@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 import redis as sync_redis
+from fastapi import Request
 from fastapi.testclient import TestClient
 
 from app.core.auth import CurrentUser, get_current_user
@@ -19,6 +20,13 @@ from bento_services.ner_schema import Entity, NEROutput
 TEST_REDIS_HOST = "localhost:6380"
 FAKE_USER = CurrentUser(id="test-user-id", email="test@claira.dev")
 COMPOSE_FILE = Path(__file__).resolve().parent.parent / "compose.test.yml"
+
+
+# ── Helpers ────────────────────────────────────────────────────────
+def _fake_current_user(request: Request) -> CurrentUser:
+    """Test stand-in for get_current_user: same side effect, no JWT."""
+    request.state.user = FAKE_USER
+    return FAKE_USER
 
 
 def _redis_is_up() -> bool:
@@ -69,7 +77,7 @@ def ensure_test_environment():
 @pytest.fixture
 def client():
     """Authenticated client: real auth replaced by a fake user."""
-    app.dependency_overrides[get_current_user] = lambda: FAKE_USER
+    app.dependency_overrides[get_current_user] = _fake_current_user
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()

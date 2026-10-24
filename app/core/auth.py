@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
@@ -38,6 +38,7 @@ def _unauthorized() -> HTTPException:
 
 
 def get_current_user(
+    request: Request,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
 ) -> CurrentUser:
     if credentials is None:
@@ -57,4 +58,6 @@ def get_current_user(
     except jwt.PyJWTError as exc:
         raise _unauthorized() from exc
 
-    return CurrentUser(id=payload["sub"], email=payload.get("email"))
+    user = CurrentUser(id=payload["sub"], email=payload.get("email"))
+    request.state.user = user  # per-request storage, read by the per-user rate limiter
+    return user
