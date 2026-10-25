@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     try:
         yield
     finally:
-        app.state.services.whisper.aclose()
+        await app.state.services.whisper.aclose()
         await app.state.services.ner.aclose()
         await app.state.services.redis.aclose()
         await engine.dispose()
