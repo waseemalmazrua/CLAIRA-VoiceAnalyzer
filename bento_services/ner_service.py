@@ -117,3 +117,16 @@ class NERService:
                 )
 
             return NEROutput(entities=entities)
+
+
+# for Prod
+
+# from collections import Counter
+
+# logfire.info(
+#     "GLiNER output completed",
+#     entity_count=len(entities),
+#     label_counts=dict(Counter(e["label"] for e in entities)),
+#     low_confidence_count=sum(e["score"] < 0.85 for e in entities),
+#     min_score=round(min((e["score"] for e in entities), default=0), 3),
+# )
